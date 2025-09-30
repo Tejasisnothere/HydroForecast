@@ -1,0 +1,10 @@
+setuptools
+fastapi
+pandas
+numpy
+scikit-learn
+dotenv
+seaborn
+matplotlib
+ipykernel
+-e .
