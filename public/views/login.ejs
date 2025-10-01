@@ -1,14 +1,84 @@
-<h1>Login</h1>
-<form method="POST" action="/login">
-    <input type="email" name="email" placeholder="Email" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <button type="submit">Login</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - WaterPredict</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-100 via-blue-200 to-sky-300 relative overflow-hidden">
 
-<ul>
-    <% if (errors && errors.length > 0) { %>
+  <!-- Decorative Water Waves -->
+  <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none rotate-180">
+    <svg class="relative block w-full h-24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0,192L80,181.3C160,171,320,149,480,128C640,107,800,85,960,85.3C1120,85,1280,107,1360,117.3L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z" fill="#0ea5e9"></path>
+    </svg>
+  </div>
+
+  <!-- Card -->
+  <div class="relative z-10 bg-white shadow-2xl rounded-3xl p-10 w-full max-w-md">
+
+    <!-- Logo -->
+    <div class="flex flex-col items-center mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-sky-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 22c4-4 6-7 6-10a6 6 0 10-12 0c0 3 2 6 6 10z" />
+      </svg>
+      <h1 class="text-3xl font-extrabold text-sky-600">WaterPredict</h1>
+      <p class="text-gray-500 text-sm">Smart Water Level Prediction</p>
+    </div>
+
+    <!-- Login Form -->
+    <form method="POST" action="/login" class="space-y-5">
+
+      <!-- Email -->
+      <div>
+        <input 
+          type="email" 
+          name="email" 
+          placeholder="Email"
+          required
+          class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-sky-400 focus:outline-none shadow-sm"
+        >
+      </div>
+
+      <!-- Password -->
+      <div>
+        <input 
+          type="password" 
+          name="password" 
+          placeholder="Password"
+          required
+          class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-sky-400 focus:outline-none shadow-sm"
+        >
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-xl font-semibold shadow-md transition duration-200"
+      >
+        Login
+      </button>
+    </form>
+
+    <!-- Error Messages -->
+    <ul class="mt-6 space-y-2">
+      <% if (errors && errors.length > 0) { %>
         <% errors.forEach(error => { %>
-            <li style="color:red"><%= error.msg %></li>
+          <li class="text-red-500 text-sm font-medium"><%= error.msg %></li>
         <% }) %>
-    <% } %>
-</ul>
+      <% } %>
+    </ul>
+
+    <!-- Extra Links -->
+    <div class="mt-6 text-center text-gray-600 text-sm">
+      <a href="/forgot-password" class="text-sky-600 hover:underline">Forgot Password?</a>
+      <p class="mt-2">
+        Don’t have an account? 
+        <a href="/register" class="text-sky-600 font-semibold hover:underline">Register</a>
+      </p>
+    </div>
+  </div>
+
+</body>
+</html>
