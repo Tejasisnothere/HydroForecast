@@ -1,0 +1,13 @@
+<h1>Signup</h1>
+<form method="POST" action="/signup">
+    <input type="text" name="name" placeholder="Name"><br>
+    <input type="email" name="email" placeholder="Email"><br>
+    <input type="password" name="password" placeholder="Password"><br>
+    <button type="submit">Signup</button>
+</form>
+
+<ul>
+    <% errors.forEach(error => { %>
+        <li style="color:red"><%= error.msg %></li>
+    <% }) %>
+</ul>

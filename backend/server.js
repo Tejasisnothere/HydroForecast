@@ -1,37 +1,41 @@
-const express = require('express')
-require('dotenv').config();
-const axios = require('axios');
-const app = express()
-const port = 3000
+require("dotenv").config();
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./config/db");
+const authRoutes = require("./routes/auth");
+const jwt = require("jsonwebtoken");
 
-app.use(express.static('public'))
+const app = express();
+connectDB();
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "../public/views"));
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-  axios.get('https://api.openweathermap.org/data/2.5/weather', {
-    params: {
-        q: 'Kolhapur',
-        appid: process.env.WEATHER_API_KEY,
-        units: 'metric'
+// Auth routes
+app.use("/", authRoutes);
+
+// Middleware for protected routes
+const verifyToken = (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return res.redirect("/login");
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch {
+        res.redirect("/login");
     }
-})
-.then(response => {
-    console.log(response.data);
-})
-.catch(error => {
-    console.error(error);
+};
+
+// Protected route
+app.get("/dashboard", verifyToken, (req, res) => {
+    res.render("dashboard", { email: req.user.id });
 });
 
-})
-
-app.post("/", (req,res) => {
-    res.send({'data':'123'})
-})
-
-
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
-
+app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`));

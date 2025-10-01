@@ -1,0 +1,61 @@
+/* login.css */
+
+/* --- Side Splash/Header Styling for Orientation --- */
+.side-splash {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30vw; /* Takes up a portion of the left screen */
+    height: 100%;
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    z-index: 8;
+    color: white;
+    
+    /* Aesthetic: Subtle linear gradient and glow */
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.side-splash h1 {
+    font-size: 3.5em;
+    font-weight: 900;
+    color: var(--color-accent);
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(0, 230, 255, 0.8);
+    margin-bottom: 10px;
+    animation: text-reveal 1.5s ease-out;
+}
+
+.side-splash p {
+    font-size: 1.1em;
+    color: #A0A0C0;
+    margin-bottom: 20px;
+    border-left: 3px solid var(--color-accent);
+    padding-left: 15px;
+}
+
+@keyframes text-reveal {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Links and Footer --- */
+.forgot-link, .switch-link a {
+    color: var(--color-accent);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.forgot-link:hover, .switch-link a:hover {
+    color: #00FFFF;
+    text-shadow: 0 0 5px rgba(0, 230, 255, 0.5);
+}
+
+.switch-link {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 0.95em;
+    color: #B0B0C0;
+}

@@ -1,0 +1,58 @@
+/* signup.css */
+
+/* --- Side Splash/Header Styling (Copied for modularity, ideally in global.css) --- */
+.side-splash {
+    /* ... (Same styles as in login.css for h1, p, and container) ... */
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30vw;
+    height: 100%;
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    z-index: 8;
+    color: white;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.side-splash h1 {
+    font-size: 3.5em;
+    font-weight: 900;
+    color: var(--color-accent);
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(0, 230, 255, 0.8);
+    margin-bottom: 10px;
+    animation: text-reveal 1.5s ease-out;
+}
+
+.side-splash p {
+    font-size: 1.1em;
+    color: #A0A0C0;
+    margin-bottom: 20px;
+    border-left: 3px solid var(--color-accent);
+    padding-left: 15px;
+}
+
+/* --- Validation Feedback Styles --- */
+.input-group.error input {
+    border-color: #FF5555; /* Soft Red for errors */
+    box-shadow: 0 0 8px rgba(255, 85, 85, 0.8), inset 1px 1px 3px var(--color-shadow-dark);
+}
+
+.input-group.success input {
+    border-color: #4CAF50; /* Green for success */
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.8), inset 1px 1px 3px var(--color-shadow-dark);
+}
+
+.switch-link a {
+    color: var(--color-accent);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.switch-link a:hover {
+    color: #00FFFF;
+    text-shadow: 0 0 5px rgba(0, 230, 255, 0.5);
+}
