@@ -1,98 +1,144 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        form { margin-bottom: 20px; }
-        input, select { padding: 5px; margin-right: 5px; }
-        button { padding: 5px 10px; }
-        ul { list-style: none; padding: 0; }
-        li { margin-bottom: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
 
-    <h1>Dashboard</h1>
-    <p>User ID: <%= userId %></p>
+  <!-- Navbar -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
+      <h1 class="text-2xl font-bold text-blue-600">HydroForecast</h1>
+      <nav class="space-x-6">
+        <a href="#" class="text-gray-600 hover:text-blue-600 font-medium">Dashboard</a>
+        <a href="#" class="text-gray-600 hover:text-blue-600 font-medium">Reports</a>
+        <a href="#" class="text-gray-600 hover:text-blue-600 font-medium">Settings</a>
+        <a href="/logout" class="text-red-500 hover:text-red-600 font-semibold">Logout</a>
+      </nav>
+    </div>
+  </header>
 
-    <h2>Add New Tank</h2>
-    <form id="addTankForm">
-        <input type="text" id="tankName" placeholder="Tank Name" required />
-        <input type="number" id="tankCapacity" placeholder="Capacity" required />
-        <input type="text" id="tankCity" placeholder="City" />
-        
-        <select id="tankType">
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-6 py-10">
+
+    <!-- Welcome Section -->
+    <section class="mb-10">
+      <h2 class="text-3xl font-semibold text-gray-800">Dashboard</h2>
+      <p class="text-gray-500 mt-1">Welcome back! You are logged in as 
+        <span class="bg-gray-200 px-2 py-1 rounded-md font-mono text-sm"><%= userId %></span>
+      </p>
+    </section>
+
+    <!-- Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- Add Tank Form -->
+      <div class="lg:col-span-1 bg-white shadow rounded-xl p-6 border border-gray-100">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Add New Tank</h3>
+        <form id="addTankForm" class="space-y-4">
+          <input type="text" id="tankName" placeholder="Tank Name" required
+            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+
+          <input type="number" id="tankCapacity" placeholder="Capacity" required
+            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+
+          <input type="text" id="tankCity" placeholder="City"
+            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+
+          <select id="tankType"
+            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             <option value="Rainwater">Rainwater</option>
             <option value="Groundwater">Groundwater</option>
             <option value="Reservoir">Reservoir</option>
             <option value="Other">Other</option>
-        </select>
-        <button type="submit">Add Tank</button>
-    </form>
+          </select>
 
-    <h2>Your Tanks</h2>
-    <ul id="tankList"></ul>
+          <button type="submit"
+            class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium shadow hover:bg-blue-700 transition">
+            Add Tank
+          </button>
+        </form>
+      </div>
 
-    
-<p>Welcome! You are logged in.</p>
-<a href="/logout">Logout</a>
+      <!-- Tank List -->
+      <div class="lg:col-span-2 bg-white shadow rounded-xl p-6 border border-gray-100">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Your Tanks</h3>
+        <ul id="tankList" class="divide-y divide-gray-200"></ul>
+      </div>
+    </div>
+  </main>
 
-    <script>
-        const token = document.cookie.split('token=')[1];
+  <!-- Footer -->
+  <footer class="border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto px-6 py-6 text-center text-gray-500 text-sm">
+      © 2025 HydroForecast. All rights reserved.
+    </div>
+  </footer>
 
-        async function fetchTanks() {
-            const res = await fetch("/api/tanks", {
-                headers: { "Authorization": "Bearer " + token }
-            });
-            const tanks = await res.json();
-            const tankList = document.getElementById("tankList");
-            tankList.innerHTML = "";
+  <!-- Script -->
+  <script>
+    const token = document.cookie.split('token=')[1];
 
-            tanks.forEach(tank => {
-                const li = document.createElement("li");
-                li.innerHTML = `
-                    ${tank.name} (Capacity: ${tank.capacity}) - ${tank.type} 
-                    <br>Location: ${tank.location.city || "-"} 
-                    <button onclick="deleteTank('${tank._id}')">Delete</button>
-                `;
-                tankList.appendChild(li);
-            });
-        }
+    async function fetchTanks() {
+      const res = await fetch("/api/tanks", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const tanks = await res.json();
+      const tankList = document.getElementById("tankList");
+      tankList.innerHTML = "";
 
-        async function addTank(e) {
-            e.preventDefault();
-            const name = document.getElementById("tankName").value;
-            const capacity = document.getElementById("tankCapacity").value;
-            const city = document.getElementById("tankCity").value;
-            const type = document.getElementById("tankType").value;
+      tanks.forEach(tank => {
+        const li = document.createElement("li");
+        li.className = "flex justify-between items-center py-4";
 
-            await fetch("/api/tanks", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + token
-                },
-                body: JSON.stringify({ name, capacity, city, type })
-            });
+        li.innerHTML = `
+          <div>
+            <p class="font-semibold text-gray-800">${tank.name}</p>
+            <p class="text-sm text-gray-500">Capacity: ${tank.capacity} • ${tank.type}</p>
+            <p class="text-sm text-gray-400">Location: ${tank.location.city || "-"}</p>
+          </div>
+          <button onclick="deleteTank('${tank._id}')"
+            class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition">
+            Delete
+          </button>
+        `;
+        tankList.appendChild(li);
+      });
+    }
 
-            document.getElementById("tankName").value = "";
-            document.getElementById("tankCapacity").value = "";
-            document.getElementById("tankCity").value = "";
-            fetchTanks();
-        }
+    async function addTank(e) {
+      e.preventDefault();
+      const name = document.getElementById("tankName").value;
+      const capacity = document.getElementById("tankCapacity").value;
+      const city = document.getElementById("tankCity").value;
+      const type = document.getElementById("tankType").value;
 
-        async function deleteTank(id) {
-            await fetch(`/api/tanks/${id}`, {
-                method: "DELETE",
-                headers: { "Authorization": "Bearer " + token }
-            });
-            fetchTanks();
-        }
+      await fetch("/api/tanks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ name, capacity, city, type })
+      });
 
-        document.getElementById("addTankForm").addEventListener("submit", addTank);
-        fetchTanks();
-    </script>
+      document.getElementById("addTankForm").reset();
+      fetchTanks();
+    }
+
+    async function deleteTank(id) {
+      await fetch(`/api/tanks/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token }
+      });
+      fetchTanks();
+    }
+
+    document.getElementById("addTankForm").addEventListener("submit", addTank);
+    fetchTanks();
+  </script>
 
 </body>
 </html>
