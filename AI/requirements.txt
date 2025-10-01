@@ -3,8 +3,11 @@ fastapi
 pandas
 numpy
 scikit-learn
-dotenv
+python-dotenv
 seaborn
 matplotlib
 ipykernel
+pymongo
+uvicorn
+requests
 -e .

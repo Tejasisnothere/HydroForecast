@@ -1,3 +1,98 @@
-<h1>Dashboard</h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { margin-bottom: 20px; }
+        input, select { padding: 5px; margin-right: 5px; }
+        button { padding: 5px 10px; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Dashboard</h1>
+    <p>User ID: <%= userId %></p>
+
+    <h2>Add New Tank</h2>
+    <form id="addTankForm">
+        <input type="text" id="tankName" placeholder="Tank Name" required />
+        <input type="number" id="tankCapacity" placeholder="Capacity" required />
+        <input type="text" id="tankCity" placeholder="City" />
+        
+        <select id="tankType">
+            <option value="Rainwater">Rainwater</option>
+            <option value="Groundwater">Groundwater</option>
+            <option value="Reservoir">Reservoir</option>
+            <option value="Other">Other</option>
+        </select>
+        <button type="submit">Add Tank</button>
+    </form>
+
+    <h2>Your Tanks</h2>
+    <ul id="tankList"></ul>
+
+    
 <p>Welcome! You are logged in.</p>
 <a href="/logout">Logout</a>
+
+    <script>
+        const token = document.cookie.split('token=')[1];
+
+        async function fetchTanks() {
+            const res = await fetch("/api/tanks", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            const tanks = await res.json();
+            const tankList = document.getElementById("tankList");
+            tankList.innerHTML = "";
+
+            tanks.forEach(tank => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    ${tank.name} (Capacity: ${tank.capacity}) - ${tank.type} 
+                    <br>Location: ${tank.location.city || "-"} 
+                    <button onclick="deleteTank('${tank._id}')">Delete</button>
+                `;
+                tankList.appendChild(li);
+            });
+        }
+
+        async function addTank(e) {
+            e.preventDefault();
+            const name = document.getElementById("tankName").value;
+            const capacity = document.getElementById("tankCapacity").value;
+            const city = document.getElementById("tankCity").value;
+            const type = document.getElementById("tankType").value;
+
+            await fetch("/api/tanks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({ name, capacity, city, type })
+            });
+
+            document.getElementById("tankName").value = "";
+            document.getElementById("tankCapacity").value = "";
+            document.getElementById("tankCity").value = "";
+            fetchTanks();
+        }
+
+        async function deleteTank(id) {
+            await fetch(`/api/tanks/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": "Bearer " + token }
+            });
+            fetchTanks();
+        }
+
+        document.getElementById("addTankForm").addEventListener("submit", addTank);
+        fetchTanks();
+    </script>
+
+</body>
+</html>
