@@ -1,13 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
-const User = require("../models/User");
+const User = require("../models/user");
 const jwt = require("jsonwebtoken");
-
-// Signup page
-router.get("/signup", (req, res) => {
-    res.render("signup", { errors: [] });
-});
 
 // Logout
 router.get("/logout", (req, res) => {
@@ -16,9 +11,9 @@ router.get("/logout", (req, res) => {
 });
 
 
-// Login page
-router.get("/login", (req, res) => {
-    res.render("login", { errors: [] });
+// Root -> Home or redirect
+router.get("/", (req, res) => {
+    res.render("home");
 });
 
 // Signup POST
@@ -55,6 +50,7 @@ const redirectIfLoggedIn = (req, res, next) => {
     next();
 };
 
+// Pages guarded by redirectIfLoggedIn
 router.get("/signup", redirectIfLoggedIn, (req, res) => {
     res.render("signup", { errors: [] });
 });

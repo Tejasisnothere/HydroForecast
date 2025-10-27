@@ -1,8 +1,23 @@
 /* signup.css */
+:root {
+    --color-accent: #00E6FF;
+    --color-text: #E0E0E0;
+    --color-background: #1A1A2E;
+    --color-card: #2A2A40;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-shadow-dark: rgba(0, 0, 0, 0.5);
+}
 
-/* --- Side Splash/Header Styling (Copied for modularity, ideally in global.css) --- */
+.page-container {
+    min-height: 100vh;
+    display: flex;
+    background: var(--color-background);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Side Splash Styling */
 .side-splash {
-    /* ... (Same styles as in login.css for h1, p, and container) ... */
     position: absolute;
     left: 0;
     top: 0;
@@ -36,23 +51,175 @@
     padding-left: 15px;
 }
 
-/* --- Validation Feedback Styles --- */
+/* Main Content Styling */
+.auth-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.auth-card {
+    background: var(--color-card);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px var(--color-shadow);
+    width: 100%;
+    max-width: 420px;
+    animation: card-reveal 0.8s ease-out;
+}
+
+.auth-card h2 {
+    color: var(--color-text);
+    font-size: 2em;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Form Styling */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.input-group label {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #A0A0C0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #4A4A60;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    color: var(--color-text);
+    font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 8px rgba(0, 230, 255, 0.4);
+}
+
+/* Validation Feedback */
 .input-group.error input {
-    border-color: #FF5555; /* Soft Red for errors */
-    box-shadow: 0 0 8px rgba(255, 85, 85, 0.8), inset 1px 1px 3px var(--color-shadow-dark);
+    border-color: #FF5555;
+    box-shadow: 0 0 8px rgba(255, 85, 85, 0.4);
 }
 
 .input-group.success input {
-    border-color: #4CAF50; /* Green for success */
-    box-shadow: 0 0 8px rgba(76, 175, 80, 0.8), inset 1px 1px 3px var(--color-shadow-dark);
+    border-color: #4CAF50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+}
+
+.error-container {
+    background: rgba(255, 85, 85, 0.1);
+    border-left: 3px solid #FF5555;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.error-message {
+    color: #FF5555;
+    font-size: 0.9em;
+    margin: 5px 0;
+}
+
+/* Button Styling */
+.cta-button {
+    background: var(--color-accent);
+    color: var(--color-background);
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.cta-button:hover {
+    background: #00FFFF;
+    box-shadow: 0 0 15px rgba(0, 230, 255, 0.5);
+}
+
+.cta-button:disabled {
+    background: #4A4A60;
+    cursor: not-allowed;
+}
+
+/* Switch Link Styling */
+.switch-link {
+    text-align: center;
+    margin-top: 20px;
+    color: #A0A0C0;
+    font-size: 0.9em;
 }
 
 .switch-link a {
     color: var(--color-accent);
-    transition: color 0.3s ease, text-shadow 0.3s ease;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .switch-link a:hover {
     color: #00FFFF;
     text-shadow: 0 0 5px rgba(0, 230, 255, 0.5);
+}
+
+/* Animations */
+@keyframes text-reveal {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes card-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .side-splash {
+        display: none;
+    }
+    
+    .auth-card {
+        padding: 30px;
+    }
 }
