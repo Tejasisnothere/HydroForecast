@@ -1,15 +1,244 @@
-<h1>Signup</h1>
-<form method="POST" action="/signup">
-    <input type="text" name="name" placeholder="Name" required><br>
-    <input type="email" name="email" placeholder="Email" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <button type="submit">Signup</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signup | HydroForecast</title>
 
-<ul>
-    <% if (errors && errors.length > 0) { %>
-        <% errors.forEach(error => { %>
-            <li style="color:red"><%= error.msg %></li>
-        <% }) %>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+    :root {
+      /* --- Light Theme Palette (Consistent with Dashboard) --- */
+      --bg-color: #f4f7fa;
+      --card-bg: #ffffff;
+      --text-primary: #2c3e50;
+      --text-secondary: #7f8c8d;
+      --accent-primary: #1abc9c; /* Teal/Green */
+      --accent-secondary: #16a085;
+      --border-color: #e8eef3;
+      --error-bg: #fdeded;
+      --error-text: #e74c3c;
+      --error-border: #f5b7b1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      /* Subtle background gradient for depth */
+      background: radial-gradient(circle at 50% 10%, #ffffff, var(--bg-color) 70%);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* --- Animations --- */
+    @keyframes dropIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes buttonPress {
+      from { transform: scale(1); }
+      to { transform: scale(0.98); }
+    }
+
+
+    /* --- Signup Container Card --- */
+    .signup-container {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      max-width: 450px;
+      text-align: center;
+      /* Main container drop-in animation */
+      opacity: 0;
+      animation: dropIn 0.6s ease-out forwards;
+      animation-delay: 0.1s; /* Slight delay after body loads */
+    }
+
+    .signup-container h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--accent-primary);
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .signup-container p {
+      color: var(--text-secondary);
+      margin-bottom: 30px;
+    }
+
+    /* --- Form Styling --- */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* Spacing between inputs */
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: #fdfdfd;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: 'Poppins', sans-serif;
+      transition: all 0.3s;
+      /* Input slide-in animation */
+      opacity: 0;
+      animation: slideInLeft 0.5s ease-out forwards;
+    }
+
+    /* Staggered input animations */
+    input[name="name"] { animation-delay: 0.3s; }
+    input[name="email"] { animation-delay: 0.4s; }
+    input[name="password"] { animation-delay: 0.5s; }
+
+
+    input::placeholder {
+      color: #b0bec5;
+    }
+
+    input:focus {
+      background: var(--card-bg);
+      /* Input focus glow effect */
+      box-shadow: 0 0 0 2px var(--accent-primary), 0 0 10px rgba(26, 188, 156, 0.4);
+      border-color: var(--accent-primary);
+      outline: none;
+    }
+
+    button {
+      background: var(--accent-primary);
+      border: none;
+      color: white;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+      margin-top: 10px;
+      /* Button slide-in animation */
+      opacity: 0;
+      animation: slideInLeft 0.5s ease-out forwards;
+      animation-delay: 0.6s;
+      /* Button press effect */
+      &:active { animation: buttonPress 0.1s ease-out forwards; }
+    }
+
+    button:hover {
+      background: var(--accent-secondary);
+      box-shadow: 0 5px 15px rgba(26, 188, 156, 0.3);
+    }
+    
+    /* --- Error Message Styling --- */
+    .error-container {
+        list-style: none;
+        padding: 0;
+        margin: 20px 0 0 0;
+        /* Error messages fade-in */
+        opacity: 0;
+        animation: fadeIn 0.5s ease-out forwards;
+        animation-delay: 0.7s;
+    }
+    
+    .error-container li {
+        background-color: var(--error-bg);
+        color: var(--error-text);
+        border: 1px solid var(--error-border);
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+
+    /* --- Login Link --- */
+    .login-link {
+        margin-top: 25px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        /* Login link fade-in */
+        opacity: 0;
+        animation: fadeIn 0.5s ease-out forwards;
+        animation-delay: 0.8s;
+    }
+
+    .login-link a {
+        color: var(--accent-primary);
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="signup-container">
+    <h1>Create Account</h1>
+    <p>Get started with your free account today.</p>
+
+    <form method="POST" action="/signup">
+        <input type="text" name="name" placeholder="Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Signup</button>
+    </form>
+    
+    <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+        <ul class="error-container">
+            <% errors.forEach(error => { %>
+                <li><%= error.msg %></li>
+            <% }) %>
+        </ul>
     <% } %>
-</ul>
+
+    <div class="login-link">
+        Already have an account? <a href="/login">Log In</a>
+    </div>
+
+  </div>
+
+</body>
+</html>
