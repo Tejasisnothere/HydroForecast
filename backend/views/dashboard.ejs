@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HydroForecast Dashboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="dashboard">
+    <nav class="navbar">
+      <div class="nav-brand">
+        <h1>💧 HydroForecast</h1>
+      </div>
+      <div class="nav-menu">
+        <button id="refresh-btn" class="btn btn-secondary">🔄 Refresh</button>
+      </div>
+    </nav>
+
+    <div class="dashboard-content">
+      <div class="welcome-section">
+        <h2>Welcome to HydroForecast</h2>
+        <p>Monitor your water tanks and track logs easily.</p>
+      </div>
+
+      <div class="action-section">
+        <button id="add-tank-btn" class="btn btn-primary">+ Add New Tank</button>
+      </div>
+
+      <!-- Add Tank Modal -->
+      <div id="add-tank-form" class="modal" style="display: none;">
+        <div class="modal-content">
+          <h3>Register New Tank</h3>
+          <form id="tank-form">
+            <div class="form-group">
+              <label for="tank-name">Tank Name</label>
+              <input type="text" id="tank-name" required />
+            </div>
+            <div class="form-group">
+              <label for="tank-capacity">Capacity (liters)</label>
+              <input type="number" id="tank-capacity" min="1" required />
+            </div>
+            <div class="form-group">
+              <label for="tank-level">Current Level (liters)</label>
+              <input type="number" id="tank-level" min="0" value="0" />
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Add Tank</button>
+              <button type="button" id="cancel-tank-btn" class="btn btn-secondary">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tanks Section -->
+      <div class="tanks-section">
+        <h3>Your Water Tanks</h3>
+        <div id="tanks-container" class="tanks-grid">
+          <p>Loading tanks...</p>
+        </div>
+      </div>
+
+      <!-- Logs Modal -->
+      <div id="logs-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <h3>Tank Logs</h3>
+          <div id="logs-container" class="logs-list"></div>
+          <div class="form-actions">
+            <button id="close-logs-btn" class="btn btn-secondary">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Log Modal -->
+      <div id="add-log-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <h3>Add Tank Log</h3>
+          <form id="log-form">
+            <input type="hidden" id="log-tank-id" />
+            <div class="form-group">
+              <label for="log-current-level">Current Level (liters)</label>
+              <input type="number" id="log-current-level" required />
+            </div>
+            <div class="form-group">
+              <label for="log-usage">Usage (liters)</label>
+              <input type="number" id="log-usage" value="0" />
+            </div>
+            <div class="form-group">
+              <label for="log-rainfall">Rainfall (mm)</label>
+              <input type="number" id="log-rainfall" value="0" />
+            </div>
+            <div class="form-group">
+              <label for="log-notes">Notes</label>
+              <input type="text" id="log-notes" />
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Add Log</button>
+              <button type="button" id="cancel-log-btn" class="btn btn-secondary">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Fetch Tanks ----------
+    async function fetchTanks() {
+      try {
+        const response = await fetch('/api/tanks');
+        const data = await response.json();
+        const container = document.getElementById('tanks-container');
+
+        if (!data.tanks || data.tanks.length === 0) {
+          container.innerHTML = '<p>No tanks registered yet.</p>';
+          return;
+        }
+
+        container.innerHTML = data.tanks
+          .map((tank) => {
+            const level = Math.min(Math.max(tank.currentLevel, 0), tank.capacity);
+            const percentage = ((level / tank.capacity) * 100).toFixed(1);
+            const statusClass =
+              percentage < tank.alertThreshold
+                ? 'low'
+                : percentage > 80
+                ? 'high'
+                : 'normal';
+
+            return `
+              <div class="tank-card">
+                <div class="tank-header">
+                  <h4>${tank.name}</h4>
+                  <span class="tank-status ${statusClass}">${percentage}%</span>
+                </div>
+                <div class="tank-details">
+                  <p><strong>Capacity:</strong> ${tank.capacity} L</p>
+                  <p><strong>Current Level:</strong> ${level} L</p>
+                </div>
+                <div class="tank-actions">
+                  <button class="btn btn-small btn-primary" onclick="openAddLog('${tank._id}', ${tank.capacity})">➕ Add Log</button>
+                  <button class="btn btn-small btn-secondary" onclick="viewTankLogs('${tank._id}')">📜 View Logs</button>
+                  <button class="btn btn-small btn-danger" onclick="deleteTank('${tank._id}')">🗑️ Delete</button>
+                </div>
+              </div>`;
+          })
+          .join('');
+      } catch (error) {
+        console.error('Error fetching tanks:', error);
+      }
+    }
+
+    // ---------- Add Tank ----------
+    document.getElementById('tank-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('tank-name').value.trim();
+      const capacity = parseFloat(document.getElementById('tank-capacity').value);
+      let currentLevel = parseFloat(document.getElementById('tank-level').value);
+      const alertThreshold = parseInt(document.getElementById('tank-threshold').value);
+
+      if (!name || capacity <= 0) {
+        alert('Please enter a valid name and positive capacity.');
+        return;
+      }
+      if (currentLevel > capacity) {
+        alert('Current level cannot exceed tank capacity.');
+        currentLevel = capacity;
+      } else if (currentLevel < 0) {
+        alert('Current level cannot be negative.');
+        currentLevel = 0;
+      }
+
+      const tankData = { name, capacity, currentLevel, alertThreshold };
+
+      try {
+        const res = await fetch('/api/tanks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tankData),
+        });
+        if (res.ok) {
+          document.getElementById('add-tank-form').style.display = 'none';
+          e.target.reset();
+          fetchTanks();
+        } else {
+          const err = await res.json();
+          alert('Error adding tank: ' + err.message);
+        }
+      } catch (error) {
+        console.error('Error adding tank:', error);
+      }
+    });
+
+    // ---------- Delete Tank ----------
+    async function deleteTank(tankId) {
+      if (!confirm('Delete this tank and all its logs?')) return;
+      try {
+        await fetch(`/api/tanks/${tankId}`, { method: 'DELETE' });
+        await fetch(`/api/tanklogs/${tankId}/clear`, { method: 'DELETE' });
+        fetchTanks();
+      } catch (error) {
+        console.error('Error deleting tank:', error);
+      }
+    }
+
+    // ---------- Add Log ----------
+    let activeTankCapacity = 0;
+    function openAddLog(tankId, capacity) {
+      activeTankCapacity = capacity;
+      document.getElementById('log-tank-id').value = tankId;
+      document.getElementById('add-log-modal').style.display = 'flex';
+    }
+
+    document.getElementById('log-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const tankId = document.getElementById('log-tank-id').value;
+      const currentLevel = parseFloat(document.getElementById('log-current-level').value);
+      const usage = parseFloat(document.getElementById('log-usage').value) || 0;
+      const rainfall = parseFloat(document.getElementById('log-rainfall').value) || 0;
+
+      if (currentLevel < 0 || usage < 0 || rainfall < 0) {
+        alert('Values cannot be negative.');
+        return;
+      }
+      if (currentLevel > activeTankCapacity) {
+        alert('Water level cannot exceed tank capacity.');
+        return;
+      }
+
+      const logData = {
+        tank: tankId,
+        currentLevel,
+        usage,
+        rainfall,
+        notes: document.getElementById('log-notes').value,
+        logType: 'manual',
+      };
+
+      try {
+        const res = await fetch('/api/tanklogs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(logData),
+        });
+        if (res.ok) {
+          document.getElementById('add-log-modal').style.display = 'none';
+          e.target.reset();
+          fetchTanks();
+        } else {
+          const err = await res.json();
+          alert('Error adding log: ' + err.message);
+        }
+      } catch (error) {
+        console.error('Error adding log:', error);
+      }
+    });
+
+    // ---------- View Logs ----------
+    async function viewTankLogs(tankId) {
+      try {
+        const response = await fetch(`/api/tanklogs/${tankId}`);
+        const data = await response.json();
+        const container = document.getElementById('logs-container');
+
+        if (!data.logs || data.logs.length === 0) {
+          container.innerHTML = '<p>No logs available for this tank.</p>';
+        } else {
+          container.innerHTML = data.logs
+            .map(
+              (log) => `
+                <div class="log-item">
+                  <div class="log-info">
+                    <strong>${new Date(log.timestamp).toLocaleString()}</strong>
+                  </div>
+                  <div class="log-details">
+                    <span>Level: ${Math.min(Math.max(log.currentLevel, 0), activeTankCapacity)} L</span>
+                    ${log.usage > 0 ? `<span>💧 -${log.usage}L</span>` : ''}
+                    ${log.rainfall > 0 ? `<span>🌧️ ${log.rainfall}mm</span>` : ''}
+                  </div>
+                  ${log.notes ? `<p>${log.notes}</p>` : ''}
+                  <button class="btn btn-small btn-danger" onclick="deleteLog('${log._id}', '${tankId}')">Delete</button>
+                </div>`
+            )
+            .join('');
+        }
+        document.getElementById('logs-modal').style.display = 'flex';
+      } catch (error) {
+        console.error('Error fetching logs:', error);
+      }
+    }
+
+    // ---------- Delete Log ----------
+    async function deleteLog(logId, tankId) {
+      if (!confirm('Delete this log?')) return;
+      try {
+        await fetch(`/api/tanklogs/${logId}`, { method: 'DELETE' });
+        viewTankLogs(tankId);
+      } catch (error) {
+        console.error('Error deleting log:', error);
+      }
+    }
+
+    // ---------- Event Listeners ----------
+    document.getElementById('add-tank-btn').addEventListener('click', () => {
+      document.getElementById('add-tank-form').style.display = 'flex';
+    });
+    document.getElementById('cancel-tank-btn').addEventListener('click', () => {
+      document.getElementById('add-tank-form').style.display = 'none';
+    });
+    document.getElementById('cancel-log-btn').addEventListener('click', () => {
+      document.getElementById('add-log-modal').style.display = 'none';
+    });
+    document.getElementById('close-logs-btn').addEventListener('click', () => {
+      document.getElementById('logs-modal').style.display = 'none';
+    });
+    document.getElementById('refresh-btn').addEventListener('click', fetchTanks);
+
+    // ---------- Initialize ----------
+    fetchTanks();
+    setInterval(fetchTanks, 30000);
+  </script>
+</body>
+</html>

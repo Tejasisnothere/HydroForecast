@@ -1,88 +1,50 @@
-const express = require("express");
-const router = express.Router();
-const User = require("../models/User");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-// Signup
-router.get("/signup", (req, res) => {
-    res.render("signup", { errors: [] }); 
-});
-
-router.get("/login", (req, res) => {
-    res.render("login", { errors: [] }); 
-});
-
-router.post("/signup", async (req, res) => {
-    const { name, email, password } = req.body;
-    const errors = [];
-
-    // Basic validations
-    if (!name || !email || !password) {
-        errors.push({ msg: "All fields are required" });
+const verifyToken = async (req, res, next) => {
+  try {
+    // Try to get token from cookies first, then from Authorization header
+    let token = req.cookies.token;
+    
+    // If no cookie, check Authorization header (for Postman/API testing)
+    if (!token && req.headers.authorization) {
+      // Format: "Bearer <token>"
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove "Bearer " prefix
+      } else {
+        token = authHeader; // In case someone sends just the token
+      }
     }
-    if (password && password.length < 8) {
-        errors.push({ msg: "Password must be at least 8 characters" });
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
-
-    if (errors.length > 0) {
-        return res.render("signup", { errors });
+    
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Find user
+    const user = await User.findById(decoded.userId).select('-password');
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid token. User not found.' });
     }
-
-    try {
-        let user = await User.findOne({ email });
-        if (user) {
-            errors.push({ msg: "Email already registered" });
-            return res.render("signup", { errors });
-        }
-
-        user = new User({ name, email, password });
-        await user.save();
-
-        res.redirect("/login");
-    } catch (err) {
-        errors.push({ msg: "Server error" });
-        res.render("signup", { errors });
+    
+    // Attach user to request object
+    req.user = user;
+    req.userId = decoded.userId;
+    
+    next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
     }
-});
-
-
-router.post("/login", async (req, res) => {
-    const { email, password } = req.body;
-    const errors = [];
-
-    try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            errors.push({ msg: "Invalid email or password" });
-            return res.render("login", { errors });
-        }
-
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            errors.push({ msg: "Invalid email or password" });
-            return res.render("login", { errors });
-        }
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: "1h"
-        });
-
-        res.cookie("token", token, { httpOnly: true });
-        res.redirect("/dashboard");
-    } catch (err) {
-        errors.push({ msg: "Server error" });
-        res.render("login", { errors });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired.' });
     }
-});
+    return res.status(500).json({ message: 'Server error during authentication.' });
+  }
+};
 
-
-// Logout
-router.get("/logout", (req, res) => {
-    res.clearCookie("token");
-    res.redirect("/login");
-});
-
-
-
-module.exports = router;
+module.exports = { verifyToken };

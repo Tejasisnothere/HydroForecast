@@ -1,114 +1,173 @@
-require("dotenv").config();
-const express = require("express");
-const path = require("path");
-const cookieParser = require("cookie-parser");
-const connectDB = require("./config/db");
-const authRoutes = require("./middleware/auth"); // signup/login
-const jwt = require("jsonwebtoken");
-const axios = require("axios");
+const express = require('express');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
+const path = require('path');
+const axios = require('axios');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
-connectDB();
 
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../public/views"));
-app.use(express.static(path.join(__dirname, "../public")));
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 
-// Auth routes
-app.use("/", authRoutes);
+// Static files
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware for protected routes
-const verifyToken = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.redirect("/login");
+// View engine setup
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // { id: user._id }
-        next();
-    } catch {
-        res.redirect("/login");
-    }
-};
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('✅ MongoDB connected successfully'))
+.catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// Protected tanks routes
-app.use("/api/tanks", verifyToken, require("./routes/tanks"));
+// Import routes
+const authRoutes = require('./routes/auth');
+const tankRoutes = require('./routes/tank');
+const tankLogRoutes = require('./routes/tankLogs');
 
-// Example protected page
-app.get("/dashboard", verifyToken, (req, res) => {
-    res.render("dashboard", { userId: req.user.id });
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/tanks', tankRoutes);
+app.use('/api/tanklogs', tankLogRoutes);
+
+// View routes
+app.get('/', (req, res) => {
+  res.redirect('/login');
 });
 
-app.get("/", (req,res)=>{
-    const axios = require('axios');
+app.get('/login', (req, res) => {
+  res.render('login');
+});
 
-async function getForecast(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast`;
-  const params = {
-    latitude: lat,
-    longitude: lon,
-    daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum',
-    timezone: 'auto'
-  };
+app.get('/signup', (req, res) => {
+  res.render('signup');
+});
 
-  const resp = await axios.get(url, { params });
-  return resp.data;
-}
-
-getForecast(19.07, 72.87)  // Mumbai
-  .then(data => console.log(data))
-  .catch(err => console.error(err));
-
-})
-
-app.get("/weather", (req,res) =>{
-    const axios = require('axios');
-
-async function getHistoricalWeather(lat, lon, startDate, endDate) {
-  const url = `https://archive-api.open-meteo.com/v1/archive`;  // depending on the endpoint
-  // Note: you need to check the Open-Meteo docs for the precise historical endpoint
-  const params = {
-    latitude: lat,
-    longitude: lon,
-    start_date: startDate,   // YYYY-MM-DD
-    end_date: endDate,       // YYYY-MM-DD
-    hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m'  // whatever variables you need
-  };
-
-  const resp = await axios.get(url, { params });
-  return resp.data;
-}
-
-getHistoricalWeather(19.07, 72.87, '2025-09-01', '2025-09-05')
-  .then(data => console.log(data))
-  .catch(err => console.error(err));
-
-})
-
-
-setInterval(async () => {
-  try {
-    const resp = await axios.get('https://api.open-meteo.com/v1/forecast', {
-      params: {
-        latitude: 19.07,
-        longitude: 72.87,
-        daily: 'precipitation_sum',
-        timezone: 'auto'
-      }
-    });
-    console.log("Rainfall data:", resp.data.daily);
-    // You could also save this to MongoDB here
-  } catch (err) {
-    console.error("Error fetching weather:", err.message);
+app.get('/dashboard', (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.redirect('/login');
   }
-}, 10000);  // 1 hour in ms
+  res.render('dashboard');
+});
 
+// Weather data fetching service (background task)
+const TankLog = require('./models/TankLog');
+const Tank = require('./models/Tank');
 
+let weatherFetchInterval;
 
+const fetchWeatherData = async () => {
+  try {
+    // Default location (can be made dynamic based on tank locations)
+    const latitude = 13.0827; // Chennai
+    const longitude = 80.2707;
+    
+    // Fetch current weather and forecast from Open Meteo API
+    const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=precipitation&hourly=precipitation&timezone=auto`;
+    
+    const response = await axios.get(forecastUrl);
+    
+    if (response.data && response.data.current) {
+      const currentPrecipitation = response.data.current.precipitation || 0;
+      const timestamp = new Date(response.data.current.time);
+      
+      console.log(`🌧️  Weather Update [${timestamp.toLocaleString()}]: Precipitation = ${currentPrecipitation} mm`);
+      
+      // If there's significant rainfall, log it to all tanks
+      if (currentPrecipitation > 0) {
+        const tanks = await Tank.find();
+        
+        for (const tank of tanks) {
+          // Calculate water addition based on rainfall and tank capacity
+          const rainfallContribution = (currentPrecipitation / 10) * (tank.capacity * 0.1);
+          
+          const newLog = new TankLog({
+            tank: tank._id,
+            user: tank.user,
+            currentLevel: Math.min(tank.currentLevel + rainfallContribution, tank.capacity),
+            rainfall: currentPrecipitation,
+            usage: 0,
+            timestamp: timestamp,
+            notes: `Automated rainfall log: ${currentPrecipitation}mm precipitation detected`
+          });
+          
+          await newLog.save();
+          
+          // Update tank current level
+          tank.currentLevel = Math.min(tank.currentLevel + rainfallContribution, tank.capacity);
+          await tank.save();
+        }
+        
+        console.log(`💧 Rainfall logged for ${tanks.length} tank(s)`);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error fetching weather data:', error.message);
+  }
+};
 
-app.listen(process.env.PORT || 5000, () =>
-    console.log(`Server running on port ${process.env.PORT || 5000}`)
-);
+// Start weather monitoring (every 60 seconds)
+const startWeatherMonitoring = () => {
+  console.log('🌦️  Weather monitoring service started');
+  fetchWeatherData(); // Initial fetch
+  weatherFetchInterval = setInterval(fetchWeatherData, 60000); // Every 60 seconds
+};
+
+// Stop weather monitoring
+const stopWeatherMonitoring = () => {
+  if (weatherFetchInterval) {
+    clearInterval(weatherFetchInterval);
+    console.log('🌦️  Weather monitoring service stopped');
+  }
+};
+
+// Start monitoring after DB connection
+mongoose.connection.once('open', () => {
+  startWeatherMonitoring();
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+const PORT = process.env.PORT || 5000;
+
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  stopWeatherMonitoring();
+  server.close(() => {
+    console.log('HTTP server closed');
+    mongoose.connection.close(false, () => {
+      console.log('MongoDB connection closed');
+      process.exit(0);
+    });
+  });
+});

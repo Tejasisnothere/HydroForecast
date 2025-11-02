@@ -1,6 +1,7 @@
 # Logs
-.pdf
-.csv
+*.pdf
+*.csv
+
 
 logs
 *.log
