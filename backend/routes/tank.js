@@ -21,7 +21,7 @@ router.post('/', verifyToken, async (req, res) => {
       name,
       capacity,
       currentLevel: currentLevel || 0,
-      location: location || { latitude: 0, longitude: 0, address: '' },
+      location: location ,
       unit: unit || 'liters',
       alertThreshold: alertThreshold || 20
     });
@@ -90,7 +90,8 @@ router.put('/:id', verifyToken, async (req, res) => {
     if (name) tank.name = name;
     if (capacity !== undefined) tank.capacity = capacity;
     if (currentLevel !== undefined) tank.currentLevel = currentLevel;
-    if (location) tank.location = { ...tank.location, ...location };
+    if (location) tank.location = location;
+
     if (unit) tank.unit = unit;
     if (alertThreshold !== undefined) tank.alertThreshold = alertThreshold;
     if (status) tank.status = status;

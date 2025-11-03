@@ -22,18 +22,7 @@ const tankSchema = new mongoose.Schema({
     min: [0, 'Current level cannot be negative']
   },
   location: {
-    latitude: {
-      type: Number,
-      default: 0
-    },
-    longitude: {
-      type: Number,
-      default: 0
-    },
-    address: {
-      type: String,
-      default: ''
-    }
+    type: String
   },
   unit: {
     type: String,

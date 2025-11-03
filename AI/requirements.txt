@@ -10,4 +10,5 @@ ipykernel
 pymongo
 uvicorn
 requests
+geopy
 -e .

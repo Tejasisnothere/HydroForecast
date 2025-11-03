@@ -41,10 +41,18 @@
               <input type="number" id="tank-capacity" min="1" required />
             </div>
             <div class="form-group">
+              <label for="tank-location">Location</label>
+              <input type="text" id="tank-location" placeholder="e.g., Mumbai, India" required />
+            </div>
+
+            <div class="form-group">
               <label for="tank-level">Current Level (liters)</label>
               <input type="number" id="tank-level" min="0" value="0" />
             </div>
-            
+            <div class="form-group">
+              <label for="tank-threshold">Alert Threshold (%)</label>
+              <input type="number" id="tank-threshold" min="0" max="100" value="20" />
+            </div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Add Tank</button>
               <button type="button" id="cancel-tank-btn" class="btn btn-secondary">Cancel</button>
@@ -158,6 +166,7 @@
       const capacity = parseFloat(document.getElementById('tank-capacity').value);
       let currentLevel = parseFloat(document.getElementById('tank-level').value);
       const alertThreshold = parseInt(document.getElementById('tank-threshold').value);
+      const location = document.getElementById('tank-location').value.trim();
 
       if (!name || capacity <= 0) {
         alert('Please enter a valid name and positive capacity.');
@@ -171,7 +180,7 @@
         currentLevel = 0;
       }
 
-      const tankData = { name, capacity, currentLevel, alertThreshold };
+      const tankData = { name, capacity, currentLevel, alertThreshold, location };
 
       try {
         const res = await fetch('/api/tanks', {
@@ -229,7 +238,7 @@
       }
 
       const logData = {
-        tank: tankId,
+        tankId: tankId,
         currentLevel,
         usage,
         rainfall,
