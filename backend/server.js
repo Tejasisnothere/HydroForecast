@@ -12,6 +12,9 @@ dotenv.config();
 const app = express();
 
 // Middleware
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -26,6 +29,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+
+const predictionRoutes = require("./routes/prediction");
+app.use("/", predictionRoutes);
+
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
@@ -75,8 +83,8 @@ let weatherFetchInterval;
 const fetchWeatherData = async () => {
   try {
     // Default location (can be made dynamic based on tank locations)
-    const latitude = 13.0827; // Chennai
-    const longitude = 80.2707;
+    const latitude = 12.0827; // Chennai
+    const longitude = 72.2707;
     
     // Fetch current weather and forecast from Open Meteo API
     const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=precipitation&hourly=precipitation&timezone=auto`;
@@ -87,7 +95,7 @@ const fetchWeatherData = async () => {
       const currentPrecipitation = response.data.current.precipitation || 0;
       const timestamp = new Date(response.data.current.time);
       
-      console.log(`🌧️  Weather Update [${timestamp.toLocaleString()}]: Precipitation = ${currentPrecipitation} mm`);
+      // console.log(`🌧️  Weather Update [${timestamp.toLocaleString()}]: Precipitation = ${currentPrecipitation} mm`);
       
       // If there's significant rainfall, log it to all tanks
       if (currentPrecipitation > 0) {

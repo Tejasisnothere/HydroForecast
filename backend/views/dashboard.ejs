@@ -149,6 +149,11 @@
                 <div class="tank-actions">
                   <button class="btn btn-small btn-primary" onclick="openAddLog('${tank._id}', ${tank.capacity})">➕ Add Log</button>
                   <button class="btn btn-small btn-secondary" onclick="viewTankLogs('${tank._id}')">📜 View Logs</button>
+                  <a href="/prediction/${tank._id}">Predict</a>
+
+
+
+
                   <button class="btn btn-small btn-danger" onclick="deleteTank('${tank._id}')">🗑️ Delete</button>
                 </div>
               </div>`;
@@ -328,6 +333,7 @@
     // ---------- Initialize ----------
     fetchTanks();
     setInterval(fetchTanks, 30000);
+
   </script>
 </body>
 </html>

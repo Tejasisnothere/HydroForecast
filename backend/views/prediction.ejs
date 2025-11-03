@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HydroForecast Prediction</title>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background-color: #f9fafb;
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #e0f2fe;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-brand h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #0369a1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      background: #0369a1;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: 0.3s;
+    }
+
+    .btn:hover { background: #0284c7; }
+
+    .content {
+      padding: 2rem 3rem;
+    }
+
+    .card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+    }
+
+    canvas {
+      width: 100%;
+      max-height: 420px;
+      margin-top: 1rem;
+    }
+
+    .section-title {
+      color: #0c4a6e;
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .gw-level {
+      font-size: 1.1rem;
+      color: #0369a1;
+      margin-top: 0.5rem;
+    }
+
+    .suggestion {
+      font-weight: 600;
+      margin-top: 0.5rem;
+      color: #059669;
+    }
+
+    .suggestion.low { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <!-- 🔹 Navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h1>💧 HydroForecast</h1>
+    </div>
+    <div class="nav-menu">
+      <a href="/dashboard" class="btn">🏠 Back</a>
+    </div>
+  </nav>
+
+  <!-- 🔹 Main Content -->
+  <div class="content">
+    <h2>Prediction Results for Tank: <%= tank_id %></h2>
+    <p><strong>Location:</strong> <%= location %></p>
+
+    <div class="card">
+      <h3>Groundwater Level (mbgl): <%= groundwater_level_mbgl.toFixed(2) %></h3>
+      <p class="gw-level">
+        <% if (groundwater_level_mbgl > 5) { %>
+          <span class="suggestion low">⚠️ Groundwater is deep — minimize extraction.</span>
+        <% } else if (groundwater_level_mbgl > 2) { %>
+          <span class="suggestion">✅ Optimal groundwater depth — sustainable usage possible.</span>
+        <% } else { %>
+          <span class="suggestion">💧 Shallow groundwater — efficient tapping recommended.</span>
+        <% } %>
+      </p>
+    </div>
+
+    <!-- 🔹 Tank Prediction Chart -->
+    <div class="card">
+      <h3 class="section-title">Tank Level Forecast (Predicted)</h3>
+      <canvas id="tankChart"></canvas>
+    </div>
+
+    <!-- 🔹 Rainfall Forecast Chart -->
+    <div class="card">
+      <h3 class="section-title">Rainfall Forecast (mm)</h3>
+      <canvas id="rainChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Data coming from backend
+    const pred_dates = <%- JSON.stringify(pred_dates || (predictions ? predictions.map(p => p.date) : [])) %>;
+    const pred_vals = <%- JSON.stringify(pred_vals || (predictions ? predictions.map(p => p.predicted_value) : [])) %>;
+    const rainfall = <%- JSON.stringify(rainfall_forecast || []) %>;
+
+    // 🟢 Tank Prediction Chart
+    new Chart(document.getElementById('tankChart'), {
+      type: 'line',
+      data: {
+        labels: pred_dates.map(d => new Date(d).toLocaleDateString()),
+        datasets: [{
+          label: 'Predicted Tank Level (L)',
+          data: pred_vals,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.2)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 3,
+          pointBackgroundColor: '#15803d'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: false }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Date' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Tank Level (L)' } }
+        }
+      }
+    });
+
+    // 🌧️ Rainfall Chart
+    new Chart(document.getElementById('rainChart'), {
+      type: 'bar',
+      data: {
+        labels: rainfall.map((_, i) => `Day ${i + 1}`),
+        datasets: [{
+          label: 'Rainfall (mm)',
+          data: rainfall,
+          backgroundColor: 'rgba(14,165,233,0.6)',
+          borderColor: '#0284c7',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: false }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Forecast Days' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Rainfall (mm)' } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
