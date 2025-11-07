@@ -4,187 +4,426 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HydroForecast Prediction</title>
-  <link rel="stylesheet" href="/style.css" />
+  <!-- <link rel="stylesheet" href="/style.css" /> -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
+  <!-- 
+    NEW STYLES
+    Replaced the original CSS with this new block for the 
+    professional, ocean-themed analytics dashboard.
+  -->
   <style>
-    body {
-      background-color: #f9fafb;
-      font-family: 'Poppins', sans-serif;
+    :root {
+      --primary-blue: #007aff;
+      --primary-blue-dark: #0056b3;
+      --sky-blue: #e0f7fa; /* Sky Blue */
+      --teal: #b2fcfd; /* Teal */
+      --glass-bg: rgba(255, 255, 255, 0.35);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --text-dark: #1f2937;
+      --text-light: #4b5563;
+      --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --shadow-medium: 0 8px 30px rgba(0, 122, 255, 0.15);
+      --border-radius-card: 16px;
+      --border-radius-btn: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    /* 3. Soft gradient background */
+    body {
+      font-family: 'Poppins', sans-serif;
+      /* Soft sky blue -> teal gradient */
+      background: linear-gradient(135deg, var(--sky-blue) 0%, var(--teal) 100%);
+      background-attachment: fixed;
+      color: var(--text-dark);
+      min-height: 100vh;
+    }
+
+    /* 6. Rounded, glass-like containers (for Navbar) */
     .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: #e0f2fe;
-      padding: 1rem 2rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 1.25rem 2rem;
+      margin: 1.5rem auto 0;
+      max-width: 1400px;
+      width: calc(100% - 3rem); /* Full width with padding */
+
+      /* Glassmorphism */
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius-card);
+      box-shadow: var(--shadow-light);
+
+      position: sticky;
+      top: 1.5rem;
+      z-index: 100;
     }
 
     .nav-brand h1 {
       margin: 0;
       font-size: 1.6rem;
-      color: #0369a1;
+      color: var(--primary-blue-dark);
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
     .btn {
-      background: #0369a1;
+      background: var(--primary-blue);
       color: white;
       text-decoration: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      transition: 0.3s;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--border-radius-btn);
+      font-weight: 500;
+      transition: all 0.3s ease;
     }
-
-    .btn:hover { background: #0284c7; }
+    .btn:hover {
+      background: var(--primary-blue-dark);
+      box-shadow: var(--shadow-medium);
+      transform: translateY(-3px);
+    }
+    .btn:active {
+      transform: translateY(-1px);
+    }
 
     .content {
-      padding: 2rem 3rem;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
     }
-
-    .card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    
+    /* 4. Animated headings */
+    .content h2, .content .location-text {
+      color: var(--primary-blue-dark);
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInSlideUp 0.6s ease-out 0.2s forwards;
+    }
+    .content h2 {
+      font-size: 2.25rem;
+      font-weight: 700;
+    }
+    .content .location-text {
+      font-size: 1.1rem;
+      font-weight: 500;
       margin-bottom: 2rem;
+      animation-delay: 0.3s;
+    }
+    
+    /* 1. Responsive card layout */
+    .card-grid {
+      display: grid;
+      /* Full-width Stat card, then 2-col for charts */
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    /* On larger screens, charts are side-by-side */
+    @media (min-width: 900px) {
+      .card-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .card-gw {
+        /* Make Groundwater card span full width */
+        grid-column: 1 / -1;
+      }
     }
 
-    canvas {
-      width: 100%;
-      max-height: 420px;
-      margin-top: 1rem;
+    /* 6. Rounded, glass-like containers (for Cards) */
+    .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius-card);
+      box-shadow: var(--shadow-light);
+      padding: 1.5rem 2rem;
+      
+      /* 5. Smooth transitions / 7. Loading animation */
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInSlideUp 0.6s ease-out forwards;
     }
+    
+    /* Stagger the card animations */
+    .card-gw { animation-delay: 0.5s; }
+    .card-tank { animation-delay: 0.6s; }
+    .card-rain { animation-delay: 0.7s; }
 
-    .section-title {
-      color: #0c4a6e;
-      font-size: 1.3rem;
+    .card h3.section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--primary-blue-dark);
       margin-bottom: 0.5rem;
     }
-
-    .gw-level {
-      font-size: 1.1rem;
-      color: #0369a1;
-      margin-top: 0.5rem;
+    
+    /* Stat Card (Groundwater) */
+    .stat-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
-
+    .stat-content .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+    
     .suggestion {
       font-weight: 600;
-      margin-top: 0.5rem;
-      color: #059669;
+      font-size: 1.1rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+    }
+    .suggestion.low {
+      color: #c62828;
+      background: #ffebee;
+    }
+    .suggestion.optimal {
+      color: #15803d;
+      background: #e8f5e9;
+    }
+    .suggestion.shallow {
+       color: #1565c0;
+       background: #e3f2fd;
+    }
+    
+    /* Chart Card */
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin-top: 1rem;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
     }
 
-    .suggestion.low { color: #dc2626; }
+    /* Animation keyframes */
+    @keyframes fadeInSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
   </style>
 </head>
 <body>
-  <!-- 🔹 Navbar -->
   <nav class="navbar">
     <div class="nav-brand">
       <h1>💧 HydroForecast</h1>
     </div>
     <div class="nav-menu">
-      <a href="/dashboard" class="btn">🏠 Back</a>
+      <a href="/dashboard" class="btn">🏠 Back to Dashboard</a>
     </div>
   </nav>
 
-  <!-- 🔹 Main Content -->
   <div class="content">
-    <h2>Prediction Results for Tank: <%= tank_id %></h2>
-    <p><strong>Location:</strong> <%= location %></p>
+    <!-- EJS tags are unchanged -->
+    <h2>Prediction Results for: <%= tank_id %></h2>
+    <p class="location-text">
+      <strong>Location:</strong> <%= location %>
+    </p>
 
-    <div class="card">
-      <h3>Groundwater Level (mbgl): <%= groundwater_level_mbgl.toFixed(2) %></h3>
-      <p class="gw-level">
-        <% if (groundwater_level_mbgl > 5) { %>
-          <span class="suggestion low">⚠️ Groundwater is deep — minimize extraction.</span>
-        <% } else if (groundwater_level_mbgl > 2) { %>
-          <span class="suggestion">✅ Optimal groundwater depth — sustainable usage possible.</span>
-        <% } else { %>
-          <span class="suggestion">💧 Shallow groundwater — efficient tapping recommended.</span>
-        <% } %>
-      </p>
-    </div>
+    <div class="card-grid">
+      <!-- Card 1: Groundwater (Stat Card) -->
+      <!-- Added 'card-gw' class -->
+      <div class="card card-gw">
+        <h3 class="section-title">Groundwater Level</h3>
+        <div class="stat-content">
+          <span class="stat-value">
+            <%= groundwater_level_mbgl.toFixed(2) %> mbgl
+          </span>
+          <p class="gw-level">
+            <!-- EJS logic is unchanged, just added new classes -->
+            <% if (groundwater_level_mbgl > 5) { %>
+            <span class="suggestion low">
+              ⚠️ Groundwater is deep — minimize extraction.
+            </span>
+            <% } else if (groundwater_level_mbgl > 2) { %>
+            <span class="suggestion optimal">
+              ✅ Optimal groundwater depth — sustainable usage possible.
+            </span>
+            <% } else { %>
+            <span class="suggestion shallow">
+              💧 Shallow groundwater — efficient tapping recommended.
+            </span>
+            <% } %>
+          </p>
+        </div>
+      </div>
 
-    <!-- 🔹 Tank Prediction Chart -->
-    <div class="card">
-      <h3 class="section-title">Tank Level Forecast (Predicted)</h3>
-      <canvas id="tankChart"></canvas>
-    </div>
+      <!-- Card 2: Tank Chart -->
+      <!-- Added 'card-tank' class and 'chart-container' div -->
+      <div class="card card-tank">
+        <h3 class="section-title">Tank Level Forecast (Predicted)</h3>
+        <div class="chart-container">
+          <canvas id="tankChart"></canvas>
+        </div>
+      </div>
 
-    <!-- 🔹 Rainfall Forecast Chart -->
-    <div class="card">
-      <h3 class="section-title">Rainfall Forecast (mm)</h3>
-      <canvas id="rainChart"></canvas>
+      <!-- Card 3: Rain Chart -->
+      <!-- Added 'card-rain' class and 'chart-container' div -->
+      <div class="card card-rain">
+        <h3 class="section-title">Rainfall Forecast (mm)</h3>
+        <div class="chart-container">
+          <canvas id="rainChart"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- 
+    SCRIPT
+    EJS data tags and core chart logic are identical.
+    Only styling options (colors, fonts, animation) are added.
+  -->
   <script>
-    // Data coming from backend
-    const pred_dates = <%- JSON.stringify(pred_dates || (predictions ? predictions.map(p => p.date) : [])) %>;
-    const pred_vals = <%- JSON.stringify(pred_vals || (predictions ? predictions.map(p => p.predicted_value) : [])) %>;
+    // Directly print the backend data to console from EJS
+    console.log("📦 Data from backend rendered in EJS:");
+    console.log(
+      <%- JSON.stringify({ tank_id, location, groundwater_level_mbgl, rainfall_forecast, pred_dates, pred_vals }, null, 2) %>
+    );
+
+    // EJS data injection (unchanged)
+    const pred_dates = <%- JSON.stringify(pred_dates || []) %>;
+    const pred_vals = <%- JSON.stringify(pred_vals || []) %>;
     const rainfall = <%- JSON.stringify(rainfall_forecast || []) %>;
 
-    // 🟢 Tank Prediction Chart
+    // --- Chart.js Defaults (New) ---
+    // Sets default font and text color for all charts
+    Chart.defaults.font.family = 'Poppins';
+    Chart.defaults.color = '#333';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+
+    // --- Tank Chart (Options updated for style) ---
     new Chart(document.getElementById('tankChart'), {
       type: 'line',
       data: {
-        labels: pred_dates.map(d => new Date(d).toLocaleDateString()),
-        datasets: [{
-          label: 'Predicted Tank Level (L)',
-          data: pred_vals,
-          borderColor: '#22c55e',
-          backgroundColor: 'rgba(34,197,94,0.2)',
-          borderWidth: 3,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 3,
-          pointBackgroundColor: '#15803d'
-        }]
+        labels: pred_dates.map((d) => new Date(d).toLocaleDateString()),
+        datasets: [
+          {
+            label: 'Predicted Tank Level (L)',
+            data: pred_vals,
+            borderColor: '#16a34a', // Darker green
+            backgroundColor: 'rgba(34, 197, 94, 0.1)', // More transparent fill
+            borderWidth: 2.5,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0, // Cleaner look
+            pointHoverRadius: 6,
+            pointHitRadius: 10,
+            pointBackgroundColor: '#15803d',
+          },
+        ],
       },
       options: {
         responsive: true,
-        plugins: {
+        maintainAspectRatio: false, // Fits container
+        /* 2. Animated charts */
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuart',
+        },
+        plugins: { 
           legend: { position: 'top' },
-          title: { display: false }
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            titleColor: '#333',
+            bodyColor: '#333',
+            borderColor: 'rgba(0,0,0,0.1)',
+            borderWidth: 1,
+            padding: 10,
+            caretSize: 8,
+            cornerRadius: 8,
+          }
         },
         scales: {
-          x: { title: { display: true, text: 'Date' } },
-          y: { beginAtZero: true, title: { display: true, text: 'Tank Level (L)' } }
-        }
-      }
+          x: { 
+            title: { display: true, text: 'Date' },
+            grid: { display: false } // Cleaner x-axis
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Tank Level (L)' },
+            grid: { 
+              color: 'rgba(0, 0, 0, 0.05)' // Lighter grid lines
+            }
+          },
+        },
+      },
     });
 
-    // 🌧️ Rainfall Chart
+    // --- Rainfall Chart (Options updated for style) ---
     new Chart(document.getElementById('rainChart'), {
       type: 'bar',
       data: {
         labels: rainfall.map((_, i) => `Day ${i + 1}`),
-        datasets: [{
-          label: 'Rainfall (mm)',
-          data: rainfall,
-          backgroundColor: 'rgba(14,165,233,0.6)',
-          borderColor: '#0284c7',
-          borderWidth: 1
-        }]
+        datasets: [
+          {
+            label: 'Rainfall (mm)',
+            data: rainfall,
+            backgroundColor: 'rgba(14, 165, 233, 0.2)', // Lighter fill
+            borderColor: '#0ea5e9', // Brighter blue
+            borderWidth: 2,
+            borderRadius: 6, // Rounded bars
+            hoverBackgroundColor: 'rgba(14, 165, 233, 0.4)',
+          },
+        ],
       },
       options: {
         responsive: true,
-        plugins: {
-          legend: { display: false },
-          title: { display: false }
+        maintainAspectRatio: false, // Fits container
+        /* 2. Animated charts */
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuart',
+        },
+        plugins: { 
+          legend: { display: false }, // Hides legend for a cleaner bar chart
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            titleColor: '#333',
+            bodyColor: '#333',
+            borderColor: 'rgba(0,0,0,0.1)',
+            borderWidth: 1,
+            padding: 10,
+            caretSize: 8,
+            cornerRadius: 8,
+          }
         },
         scales: {
-          x: { title: { display: true, text: 'Forecast Days' } },
-          y: { beginAtZero: true, title: { display: true, text: 'Rainfall (mm)' } }
-        }
-      }
+          x: { 
+            title: { display: true, text: 'Forecast Days' },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Rainfall (mm)' },
+            grid: { 
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          },
+        },
+      },
     });
   </script>
 </body>

@@ -127,4 +127,64 @@ router.delete('/:logId', async (req, res) => {
   }
 });
 
+
+
+
+router.post('/auto', async (req, res) => {
+  try {
+    const { tankId, currentLevel, rainfall, usage, notes, logType } = req.body;
+    console.log(currentLevel);
+    if (!tankId || currentLevel === undefined) {
+      return res.status(400).json({ message: 'Please provide tank ID and current level' });
+    }
+
+    const tank = await Tank.findById(tankId);
+    if (!tank) {
+      return res.status(404).json({ message: 'Tank not found' });
+    }
+    console.log("actual capcity  " + tank.capacity);
+
+    
+    const tankHeight = 3; 
+    const distanceFromTop = currentLevel/100; 
+    const waterHeight = Math.max(tankHeight - distanceFromTop, 0); 
+    console.log("current water height " + waterHeight);
+    console.log(tank.name);
+    // Convert to liters
+    const waterVolume = (waterHeight / tankHeight) * tank.capacity;
+    console.log("current water volumne " + waterVolume);
+    // Create new log
+    const tankLog = new TankLog({
+      tank: tankId,
+      currentLevel: waterVolume, 
+      rainfall: rainfall || 0,
+      usage: usage || 0,
+      notes: notes || '',
+      logType: logType || 'auto'
+    });
+
+    await tankLog.save();
+
+    // Update tank’s current level
+    tank.currentLevel = waterVolume;
+    await tank.save();
+
+    res.status(201).json({
+      message: 'Tank log created successfully',
+      calculatedFrom: {
+        distanceFromTop,
+        waterHeight,
+        tankCapacity: tank.capacity,
+        waterVolume
+      },
+      log: tankLog
+    });
+
+  } catch (error) {
+    console.error('Create tank log error:', error);
+    res.status(500).json({ message: 'Server error creating tank log', error: error.message });
+  }
+});
+
+
 module.exports = router;

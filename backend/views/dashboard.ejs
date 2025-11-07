@@ -4,7 +4,440 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HydroForecast Dashboard</title>
-  <link rel="stylesheet" href="/style.css" />
+  <style>
+    :root {
+      --primary-blue: #007aff;
+      --primary-blue-dark: #0056b3;
+      --light-blue-bg: #e0f7fa;
+      --white-bg: #f0f8ff;
+      --glass-bg: rgba(255, 255, 255, 0.35);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --text-dark: #222;
+      --text-light: #555;
+      --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --shadow-medium: 0 8px 30px rgba(0, 122, 255, 0.15);
+      --border-radius-card: 16px;
+      --border-radius-btn: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+        Arial, sans-serif;
+      background: linear-gradient(
+        135deg,
+        var(--light-blue-bg) 0%,
+        var(--white-bg) 100%
+      );
+      color: var(--text-dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* --- Main Layout --- */
+    .dashboard {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 2rem;
+      margin-top: 1.5rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius-card);
+      box-shadow: var(--shadow-light);
+      position: sticky;
+      top: 1.5rem;
+      z-index: 100;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-brand h1 {
+      color: var(--primary-blue-dark);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .dashboard-content {
+      padding: 2rem 0;
+    }
+
+    .welcome-section {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .welcome-section h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary-blue-dark);
+    }
+    .welcome-section p {
+      font-size: 1.1rem;
+      color: var(--text-light);
+      margin-top: 0.25rem;
+    }
+
+    .action-section {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .tanks-section h3 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      padding-left: 0.5rem;
+      border-left: 4px solid var(--primary-blue);
+    }
+
+    /* --- Buttons --- */
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--border-radius-btn);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease-out;
+      text-decoration: none; /* For the 'Predict' link */
+      display: inline-block; /* For the 'Predict' link */
+    }
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-medium);
+    }
+    .btn:active {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-light);
+    }
+
+    .btn-primary {
+      background-color: var(--primary-blue);
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #0085ff;
+    }
+    
+    .btn-secondary {
+      background: var(--glass-bg);
+      color: var(--primary-blue-dark);
+      border: 1px solid var(--glass-border);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.6);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .btn-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+    .btn-danger:hover {
+      background-color: #e04b59;
+    }
+    
+    .btn-small {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-radius: 8px;
+    }
+    
+    /* 'Predict' link styled as a button */
+    .tank-actions a {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-radius: 8px;
+      background-color: #17a2b8;
+      color: white;
+    }
+    .tank-actions a:hover {
+       background-color: #1ab8d1;
+    }
+
+
+    /* --- Tank Cards --- */
+    .tanks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .tank-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius-card);
+      box-shadow: var(--shadow-light);
+      padding: 1.5rem;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      position: relative;
+      overflow: hidden; /* To contain the wave */
+    }
+    .tank-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .tank-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .tank-header h4 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--primary-blue-dark);
+    }
+
+    .tank-status {
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 0.3rem 0.8rem;
+      border-radius: 99px;
+    }
+    .tank-status.low {
+      background: #ffebee;
+      color: #c62828;
+    }
+    .tank-status.normal {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .tank-status.high {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .tank-details p {
+      color: var(--text-light);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .tank-details p strong {
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+
+    .tank-actions {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    /* --- NEW Water Level Visual --- */
+    .water-level-container {
+      height: 120px; /* Fixed height for the visual */
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+      margin-top: 1.5rem;
+      position: relative;
+      overflow: hidden; /* Important for the wave */
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .water-level-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      transition: height 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+      z-index: 1;
+    }
+    
+    /* Assigning colors based on status */
+    .water-level-fill.low { background: #f44336; }
+    .water-level-fill.normal { background: #4caf50; }
+    .water-level-fill.high { background: var(--primary-blue); }
+
+    /* Wave Animation */
+    .water-level-fill::before,
+    .water-level-fill::after {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 20px; /* Height of the wave */
+      left: -50%;
+      top: -10px; /* Position wave at the top of the fill */
+      background-repeat: repeat-x;
+    }
+    
+    .water-level-fill::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 25 0 50 10 T 100 10 V 0 H 0 Z' fill='rgba(255,255,255,0.3)'/%3E%3C/svg%3E");
+      background-size: 50% 20px;
+      animation: wave-animation 3s linear infinite;
+      z-index: 3;
+    }
+    
+    .water-level-fill::after {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 25 0 50 10 T 100 10 V 0 H 0 Z' fill='rgba(255,255,255,0.5)'/%3E%3C/svg%3E");
+      background-size: 50% 20px;
+      animation: wave-animation 5s linear infinite reverse;
+      z-index: 2;
+      opacity: 0.7;
+    }
+
+    @keyframes wave-animation {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+
+    /* --- Modals --- */
+    .modal {
+      /* JS controls display, but we set up the fixed position & transition */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 1000;
+      
+      /* Base state for animation */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-out;
+      
+      /* Re-center content (from original JS 'display: flex') */
+      display: flex; 
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* We can't use `display: none` in CSS because the JS controls it.
+      Instead, we'll hook into the user's *inline* style.
+    */
+    .modal[style*="display: flex;"] {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal[style*="display: flex;"] .modal-content {
+      transform: scale(1) translateY(0);
+    }
+    
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 2rem;
+      border-radius: var(--border-radius-card);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 500px;
+      
+      /* Animation */
+      transform: scale(0.95) translateY(20px);
+      transition: transform 0.3s ease-out;
+    }
+    .modal-content h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--primary-blue-dark);
+      margin-bottom: 1.5rem;
+    }
+
+    /* --- Forms --- */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-light);
+    }
+    .form-group input[type='text'],
+    .form-group input[type='number'] {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.7);
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+    .form-group input[type='text']:focus,
+    .form-group input[type='number']:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+    }
+
+    .form-actions {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* --- Logs --- */
+    .logs-list {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 1.5rem;
+    }
+    
+    .log-item {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      box-shadow: var(--shadow-light);
+      transition: all 0.2s ease;
+    }
+    .log-item:hover {
+       border-color: rgba(0, 122, 255, 0.3);
+    }
+    
+    .log-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .log-info strong {
+      color: var(--primary-blue-dark);
+      font-size: 0.9rem;
+    }
+    .log-details {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+    }
+    .log-item p {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      font-style: italic;
+      margin-bottom: 0.75rem;
+    }
+
+  </style>
 </head>
 <body>
   <div class="dashboard">
@@ -27,8 +460,7 @@
         <button id="add-tank-btn" class="btn btn-primary">+ Add New Tank</button>
       </div>
 
-      <!-- Add Tank Modal -->
-      <div id="add-tank-form" class="modal" style="display: none;">
+      <div id="add-tank-form" class="modal modal-js" style="display: none;">
         <div class="modal-content">
           <h3>Register New Tank</h3>
           <form id="tank-form">
@@ -42,7 +474,12 @@
             </div>
             <div class="form-group">
               <label for="tank-location">Location</label>
-              <input type="text" id="tank-location" placeholder="e.g., Mumbai, India" required />
+              <input
+                type="text"
+                id="tank-location"
+                placeholder="e.g., Mumbai, India"
+                required
+              />
             </div>
 
             <div class="form-group">
@@ -51,17 +488,28 @@
             </div>
             <div class="form-group">
               <label for="tank-threshold">Alert Threshold (%)</label>
-              <input type="number" id="tank-threshold" min="0" max="100" value="20" />
+              <input
+                type="number"
+                id="tank-threshold"
+                min="0"
+                max="100"
+                value="20"
+              />
             </div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Add Tank</button>
-              <button type="button" id="cancel-tank-btn" class="btn btn-secondary">Cancel</button>
+              <button
+                type="button"
+                id="cancel-tank-btn"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
       </div>
 
-      <!-- Tanks Section -->
       <div class="tanks-section">
         <h3>Your Water Tanks</h3>
         <div id="tanks-container" class="tanks-grid">
@@ -69,19 +517,19 @@
         </div>
       </div>
 
-      <!-- Logs Modal -->
-      <div id="logs-modal" class="modal" style="display: none;">
+      <div id="logs-modal" class="modal modal-js" style="display: none;">
         <div class="modal-content">
           <h3>Tank Logs</h3>
           <div id="logs-container" class="logs-list"></div>
           <div class="form-actions">
-            <button id="close-logs-btn" class="btn btn-secondary">Close</button>
+            <button id="close-logs-btn" class="btn btn-secondary">
+              Close
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Add Log Modal -->
-      <div id="add-log-modal" class="modal" style="display: none;">
+      <div id="add-log-modal" class="modal modal-js" style="display: none;">
         <div class="modal-content">
           <h3>Add Tank Log</h3>
           <form id="log-form">
@@ -104,7 +552,13 @@
             </div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Add Log</button>
-              <button type="button" id="cancel-log-btn" class="btn btn-secondary">Cancel</button>
+              <button
+                type="button"
+                id="cancel-log-btn"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
@@ -136,6 +590,9 @@
                 ? 'high'
                 : 'normal';
 
+            // --- MODIFIED HTML TEMPLATE ---
+            // Added .water-level-container and .water-level-fill
+            // to create the animated water level visual.
             return `
               <div class="tank-card">
                 <div class="tank-header">
@@ -146,17 +603,19 @@
                   <p><strong>Capacity:</strong> ${tank.capacity} L</p>
                   <p><strong>Current Level:</strong> ${level} L</p>
                 </div>
+                
+                <div class="water-level-container">
+                  <div class="water-level-fill ${statusClass}" style="height: ${percentage}%"></div>
+                </div>
+
                 <div class="tank-actions">
                   <button class="btn btn-small btn-primary" onclick="openAddLog('${tank._id}', ${tank.capacity})">➕ Add Log</button>
                   <button class="btn btn-small btn-secondary" onclick="viewTankLogs('${tank._id}')">📜 View Logs</button>
-                  <a href="/prediction/${tank._id}">Predict</a>
-
-
-
-
+                  <a href="/prediction/${tank._id}" class="btn btn-small">🔮 Predict</a>
                   <button class="btn btn-small btn-danger" onclick="deleteTank('${tank._id}')">🗑️ Delete</button>
                 </div>
               </div>`;
+            // --- END OF MODIFIED TEMPLATE ---
           })
           .join('');
       } catch (error) {
@@ -169,8 +628,12 @@
       e.preventDefault();
       const name = document.getElementById('tank-name').value.trim();
       const capacity = parseFloat(document.getElementById('tank-capacity').value);
-      let currentLevel = parseFloat(document.getElementById('tank-level').value);
-      const alertThreshold = parseInt(document.getElementById('tank-threshold').value);
+      let currentLevel = parseFloat(
+        document.getElementById('tank-level').value
+      );
+      const alertThreshold = parseInt(
+        document.getElementById('tank-threshold').value
+      );
       const location = document.getElementById('tank-location').value.trim();
 
       if (!name || capacity <= 0) {
@@ -229,9 +692,12 @@
     document.getElementById('log-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const tankId = document.getElementById('log-tank-id').value;
-      const currentLevel = parseFloat(document.getElementById('log-current-level').value);
+      const currentLevel = parseFloat(
+        document.getElementById('log-current-level').value
+      );
       const usage = parseFloat(document.getElementById('log-usage').value) || 0;
-      const rainfall = parseFloat(document.getElementById('log-rainfall').value) || 0;
+      const rainfall =
+        parseFloat(document.getElementById('log-rainfall').value) || 0;
 
       if (currentLevel < 0 || usage < 0 || rainfall < 0) {
         alert('Values cannot be negative.');
@@ -285,15 +751,24 @@
               (log) => `
                 <div class="log-item">
                   <div class="log-info">
-                    <strong>${new Date(log.timestamp).toLocaleString()}</strong>
+                    <strong>${new Date(
+                      log.timestamp
+                    ).toLocaleString()}</strong>
                   </div>
                   <div class="log-details">
-                    <span>Level: ${Math.min(Math.max(log.currentLevel, 0), activeTankCapacity)} L</span>
+                    <span>Level: ${Math.min(
+                      Math.max(log.currentLevel, 0),
+                      activeTankCapacity // Using the capacity from when the modal was opened
+                    )} L</span>
                     ${log.usage > 0 ? `<span>💧 -${log.usage}L</span>` : ''}
-                    ${log.rainfall > 0 ? `<span>🌧️ ${log.rainfall}mm</span>` : ''}
+                    ${
+                      log.rainfall > 0 ? `<span>🌧️ ${log.rainfall}mm</span>` : ''
+                    }
                   </div>
                   ${log.notes ? `<p>${log.notes}</p>` : ''}
-                  <button class="btn btn-small btn-danger" onclick="deleteLog('${log._id}', '${tankId}')">Delete</button>
+                  <button class="btn btn-small btn-danger" onclick="deleteLog('${
+                    log._id
+                  }', '${tankId}')">Delete</button>
                 </div>`
             )
             .join('');
@@ -309,13 +784,14 @@
       if (!confirm('Delete this log?')) return;
       try {
         await fetch(`/api/tanklogs/${logId}`, { method: 'DELETE' });
-        viewTankLogs(tankId);
+        viewTankLogs(tankId); // Refresh the logs in the modal
       } catch (error) {
         console.error('Error deleting log:', error);
       }
     }
 
     // ---------- Event Listeners ----------
+    // (These are unchanged, but they now show the styled modals)
     document.getElementById('add-tank-btn').addEventListener('click', () => {
       document.getElementById('add-tank-form').style.display = 'flex';
     });
@@ -333,7 +809,6 @@
     // ---------- Initialize ----------
     fetchTanks();
     setInterval(fetchTanks, 30000);
-
   </script>
 </body>
 </html>

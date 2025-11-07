@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-
+from requests.adapters import HTTPAdapter
 import requests
 from dotenv import load_dotenv
 import pymongo
@@ -17,7 +17,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from fastapi.responses import RedirectResponse
 from datetime import datetime
-
+from requests.packages.urllib3.util.retry import Retry
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -117,14 +117,15 @@ import requests
 
 def get_rainfall_forecast(location):
     try:
+        # 1️⃣ Geocode the location
         geolocator = Nominatim(user_agent="Tejas")
-        location_obj = geolocator.geocode(location)
-
+        location_obj = geolocator.geocode(location, timeout=10)
         if not location_obj:
             raise ValueError(f"Could not geocode location: {location}")
 
         lat, lon = location_obj.latitude, location_obj.longitude
 
+        # 2️⃣ Prepare Open-Meteo API request
         url = "https://api.open-meteo.com/v1/forecast"
         params = {
             "latitude": lat,
@@ -133,24 +134,42 @@ def get_rainfall_forecast(location):
             "timezone": "auto"
         }
 
-        response = requests.get(url, params=params)
-        response.raise_for_status()  
+        # 3️⃣ Create a session with retry logic
+        session = requests.Session()
+        retries = Retry(
+            total=3,                 # Retry up to 3 times
+            backoff_factor=1,        # Wait 1s, 2s, 4s before retrying
+            status_forcelist=[502, 503, 504, 524],
+            allowed_methods=["GET"]
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+
+        # 4️⃣ Make the request with timeout
+        response = session.get(url, params=params, timeout=10)
+        response.raise_for_status()
+
+        # 5️⃣ Parse and return rainfall data
         data = response.json()
+        if "daily" not in data or "precipitation_sum" not in data["daily"]:
+            raise ValueError("Unexpected API response format")
 
         df = pd.DataFrame({
             "date": data["daily"]["time"],
             "rainfall_mm": data["daily"]["precipitation_sum"]
         })
 
-        
-        
-        arr = df['rainfall_mm'].tolist()
+        return df["rainfall_mm"].tolist()
 
-        return arr
-
+    except requests.exceptions.Timeout:
+        raise Exception("Request timed out while fetching rainfall forecast.")
+    except requests.exceptions.ConnectionError as e:
+        raise Exception(f"Network error: Could not connect to rainfall API. Details: {e}")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"HTTP error occurred: {e}")
     except Exception as e:
         raise Exception(f"Error fetching rainfall forecast: {e}")
-
 
 # pip install prophet pandas
 
@@ -201,6 +220,7 @@ def predict_future_from_iso(dates, values, forecast_days=10):
     prediction_dates = future_forecast['ds'].dt.strftime('%Y-%m-%d').tolist()
     predicted_values = future_forecast['yhat'].round(2).tolist()
 
+    
     return {
         "prediction_dates": prediction_dates,
         "predicted_values": predicted_values
@@ -252,16 +272,16 @@ def get_prediction(tank: TankId):
         pred_dates = predictions["prediction_dates"]
         pred_values = predictions["predicted_values"]
 
+        print(pred_dates, pred_values)
+
         # -------------------- Return clean response --------------------
         return {
             "tank_id": str(tank.tankId),
             "location": loc,
             "groundwater_level_mbgl": GW_LEVEL,
             "rainfall_forecast": rainfall_forecast,
-            "predictions": [
-                {"date": d, "predicted_value": v}
-                for d, v in zip(pred_dates, pred_values)
-            ]
+            "pred_dates": pred_dates,
+            "pred_vals": pred_values
         }
 
     except Exception as e:

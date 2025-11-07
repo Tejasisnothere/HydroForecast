@@ -1,15 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
-// ✅ Modern fetch is built-in in Node 18+
-// If you're using Node <18, uncomment this line:
+// ✅ Use global fetch in Node 18+, otherwise uncomment below:
 // import fetch from "node-fetch";
 
 router.get("/prediction/:tankId", async (req, res) => {
   const { tankId } = req.params;
 
   try {
-    // Call FastAPI backend
+    // Call your FastAPI backend
     const response = await fetch("http://127.0.0.1:8000/prediction", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -21,11 +20,10 @@ router.get("/prediction/:tankId", async (req, res) => {
     }
 
     const result = await response.json();
-
-    // Some FastAPI versions nest data inside 'data'
     const data = result.data || result;
+    console.log("📨 Data received from Python backend:", JSON.stringify(data, null, 2));
 
-    // ✅ Render EJS page with full prediction data
+    // ✅ Render prediction.ejs safely
     res.render("prediction", {
       tank_id: data.tank_id || tankId,
       location: data.location || "Unknown",
@@ -34,7 +32,7 @@ router.get("/prediction/:tankId", async (req, res) => {
       logs: data.logs || [],
       timestamps: data.timestamps || [],
       pred_dates: data.pred_dates || [],
-      pred_vals: data.pred_vals || [],
+      pred_vals: data.pred_vals || []
     });
   } catch (err) {
     console.error("❌ Prediction route error:", err);
